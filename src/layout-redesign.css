@@ -1,0 +1,42 @@
+/* Layout redesign: move the sidebar navigation to a horizontal top bar. */
+.app{display:flex;flex-direction:column;min-height:100vh}
+.sidebar{position:sticky;top:0;inset:auto;width:100%;height:68px;min-height:68px;z-index:10;display:flex;flex-direction:row;align-items:center;padding:8px 24px;gap:24px;box-shadow:0 1px 0 rgba(0,0,0,.18)}
+.brand{padding:0;flex:none}
+.workspace{margin:0;padding:7px 10px}
+.sidebar nav{display:flex;align-items:center;gap:4px;margin-left:auto}
+.sidebar nav button{padding:9px 12px;white-space:nowrap}
+.sidebarBottom{margin:0;display:flex;align-items:center;gap:14px}
+.sidebarBottom .privacy{display:none}
+.user{padding:0}
+.main{margin-left:0;width:100%;min-height:calc(100vh - 68px)}
+.topbar{position:sticky;top:68px}
+.home,.processing,.case{max-width:1500px}
+
+@media(max-width:1000px){
+  .sidebar{width:100%;height:auto;min-height:60px;padding:8px 14px;gap:10px;overflow-x:auto}
+  .brand div:not(.brandmark){display:block}
+  .workspace{display:none}
+  .sidebar nav{margin-left:auto}
+  .sidebar nav button{font-size:11px}
+  .sidebarBottom{display:flex}
+  .sidebarBottom .user div:not(.avatar){display:none}
+  .main{margin-left:0;width:100%}
+  .topbar{top:60px;padding:0 18px}
+  .topbar h1{max-width:300px}
+}
+
+@media(max-width:700px){
+  .sidebar{justify-content:flex-start}
+  .sidebar nav{order:3;margin-left:0}
+  .sidebar nav button{padding:8px}
+  .sidebarBottom{margin-left:auto}
+  .topbar{height:70px;top:60px}
+  .topbar .help{display:none}
+  .home,.processing,.case{padding:24px 16px}
+  .hero{align-items:flex-start}
+  .hero-stat{display:none}
+  .featureGrid{grid-template-columns:1fr 1fr}
+  .caseHero,.processHead{align-items:flex-start;flex-direction:column}
+  .caseActions{width:100%}
+  .caseActions button{flex:1;justify-content:center}
+}
