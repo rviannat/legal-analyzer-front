@@ -117,34 +117,66 @@ function App(){
     if(view==='case' && job && !briefing) getBriefing(job.id).then(setBriefing).catch(e=>setError(e.message))
   },[view,job?.id])
 
-  return <div className="app">
-    <Sidebar view={view} onHome={()=>{setView('home');setJob(null);setBriefing(null);setRecentJobs(loadRecentJobs())}} onCase={()=>job&&setView('case')}/>
-    <main className="main">
-      <Topbar job={job} />
-      {error && <div className="toast error"><AlertTriangle size={17}/>{error}<button onClick={()=>setError('')}><X size={15}/></button></div>}
-      {view==='home' && <Home onUpload={handleUpload} recentJobs={recentJobs} onOpenRecent={openRecent}/>} 
-      {view==='processing' && job && <Processing job={job} onCancel={()=>setView('home')}/>} 
-      {view==='case' && job && <CaseView job={job} briefing={briefing} tab={tab} setTab={setTab} />}
-    </main>
+  return <div className="app legal-shell">
+    <Topbar job={job} />
+    <div className="legal-layout">
+      <Sidebar view={view} onHome={()=>{setView('home');setJob(null);setBriefing(null);setRecentJobs(loadRecentJobs())}} onCase={()=>job&&setView('case')}/>
+      <main className="main legal-main">
+        {error && <div className="toast error"><AlertTriangle size={17}/>{error}<button onClick={()=>setError('')}><X size={15}/></button></div>}
+        {view==='home' && <Home onUpload={handleUpload} recentJobs={recentJobs} onOpenRecent={openRecent}/>} 
+        {view==='processing' && job && <Processing job={job} onCancel={()=>setView('home')}/>} 
+        {view==='case' && job && <CaseView job={job} briefing={briefing} tab={tab} setTab={setTab} />}
+      </main>
+    </div>
   </div>
 }
 
 function Sidebar({view,onHome,onCase}:{view:View,onHome:()=>void,onCase:()=>void}){
- return <aside className="sidebar">
-   <div className="brand"><div className="brandmark"><Scale size={21}/></div><div><b>LEGAL</b><span>ANALYZER</span></div></div>
-   <div className="workspace"><div className="avatar">RV</div><div><strong>Escritório</strong><small>Ambiente local</small></div><ChevronRight size={15}/></div>
-   <nav>
-    <button className={view==='home'?'active':''} onClick={onHome}><FolderOpen/> Processos</button>
-    <button className={view==='case'?'active':''} onClick={onCase}><Sparkles/> Análise IA</button>
-    <button><CalendarDays/> Prazos</button>
-    <button><FileText/> Relatórios</button>
+ return <aside className="legal-sidebar">
+   <div className="legal-card legal-panel" style={{padding:'16px 14px'}}>
+     <div className="legal-panel-header" style={{marginBottom:'18px'}}>
+       <strong><ShieldCheck size={14}/> Escritório</strong>
+       <span>Local</span>
+     </div>
+     <div style={{display:'flex',alignItems:'center',gap:'10px',padding:'8px 10px',borderRadius:'12px',background:'rgba(255,255,255,0.02)',border:'1px solid var(--line)'}}>
+       <div className="legal-metric-icon" style={{width:'34px',height:'34px'}}><Users size={15}/></div>
+       <div>
+         <div style={{fontSize:'12px',fontWeight:800}}>Rafael Vianna</div>
+         <div style={{fontSize:'10px',color:'var(--muted)'}}>Administrador</div>
+       </div>
+     </div>
+   </div>
+   <nav className="legal-nav">
+    <button className={view==='home'?'active':''} onClick={onHome}><FolderOpen size={16}/> Processos</button>
+    <button className={view==='case'?'active':''} onClick={onCase}><Sparkles size={16}/> Análise IA</button>
+    <button><CalendarDays size={16}/> Prazos</button>
+    <button><FileText size={16}/> Relatórios</button>
    </nav>
-   <div className="sidebarBottom"><div className="privacy"><ShieldCheck size={17}/><div><b>Processamento local</b><span>Seus documentos permanecem no ambiente configurado.</span></div></div><div className="user"><div className="avatar dark">RV</div><div><strong>Rafael Vianna</strong><small>Administrador</small></div></div></div>
+   <div className="legal-card legal-panel" style={{marginTop:'18px',padding:'14px 12px'}}>
+     <div className="legal-panel-header" style={{marginBottom:'10px'}}>
+       <strong><ShieldCheck size={14}/> Segurança</strong>
+     </div>
+     <div style={{color:'var(--muted)',fontSize:'11px',lineHeight:1.6}}>Processamento local. Documentos e metadados permanecem no ambiente do cliente.</div>
+   </div>
  </aside>
 }
 
 function Topbar({job}:{job:Job|null}){
- return <header className="topbar"><div><span className="eyebrow">INTELIGÊNCIA JURÍDICA</span><h1>{job ? job.nomeArquivo : 'Painel de processos'}</h1></div><div className="top-actions"><button className="iconbtn"><Search/></button><button className="help"><HelpCircle/> Ajuda</button><div className="avatar">RV</div></div></header>
+ return <header className="topbar legal-topbar topbar-modern">
+   <div className="legal-brand">
+     <div className="legal-badge"><Scale size={18}/></div>
+     <div>
+       <strong>LEGAL</strong>
+       <span>ANALYZER</span>
+     </div>
+   </div>
+   <div className="legal-toolbar">
+     <span className="legal-pill"><Zap size={12}/> IA ativa</span>
+     <button className="legal-button-dark"><Search size={15}/></button>
+     <button className="legal-button-ghost"><HelpCircle size={15}/> Ajuda</button>
+     <button className="legal-button">{job ? job.nomeArquivo : 'Novo processo'}</button>
+   </div>
+ </header>
 }
 
 function Home({onUpload,recentJobs,onOpenRecent}:{onUpload:(f:File)=>void;recentJobs:RecentJob[];onOpenRecent:(id:string)=>void}){
@@ -152,38 +184,58 @@ function Home({onUpload,recentJobs,onOpenRecent}:{onUpload:(f:File)=>void;recent
  const onFiles=(files:FileList|null)=>{const f=files?.[0]; if(f){ if(!f.name.toLowerCase().endsWith('.pdf')) return alert('Envie um arquivo PDF.'); onUpload(f)}}
  const processing=recentJobs.filter(x=>!['CONCLUIDO','ERRO'].includes(x.status)).length
  const completed=recentJobs.filter(x=>x.status==='CONCLUIDO').length
- return <section className="home">
-   <div className="dashboardHeader">
-    <div><span className="eyebrow">CENTRAL DE PROCESSOS</span><h2>Seu trabalho jurídico, <em>em um só lugar.</em></h2><p>Acompanhe análises, retome processos e inicie um novo briefing sem perder contexto.</p></div>
-    <button className="primary dashboardNew" onClick={()=>input.current?.click()}><Plus size={18}/> Novo processo</button>
-   </div>
-
-   <div className="dashboardStats">
-    <div className="dashboardStat"><div className="dashboardStatIcon"><FolderOpen/></div><div><strong>{recentJobs.length}</strong><span>Processos recentes</span></div></div>
-    <div className="dashboardStat"><div className="dashboardStatIcon active"><Loader2/></div><div><strong>{processing}</strong><span>Em processamento</span></div></div>
-    <div className="dashboardStat"><div className="dashboardStatIcon done"><CheckCircle2/></div><div><strong>{completed}</strong><span>Concluídos</span></div></div>
-    <div className="dashboardStat"><div className="dashboardStatIcon"><Sparkles/></div><div><strong>IA</strong><span>Análise assistida</span></div></div>
-   </div>
-
-   <div className="dashboardGrid">
-    <div className="uploadCard dashboardUpload" onDragOver={e=>{e.preventDefault();setDrag(true)}} onDragLeave={()=>setDrag(false)} onDrop={e=>{e.preventDefault();setDrag(false);onFiles(e.dataTransfer.files)}} data-drag={drag}>
+ return <section className="home legal-home">
+   <div className="legal-card legal-hero">
+    <div className="legal-hero-copy">
+      <span className="legal-eyebrow">Centro de trabalho</span>
+      <h1>Inteligência jurídica <span>para o escritório.</span></h1>
+      <p>Analise processos, evidências e riscos em um painel pensado para quem vive do direito e precisa de decisão rápida, sem ruído.</p>
+    </div>
+    <div className="legal-hero-panel">
+      <strong>Fluxo ativo</strong>
+      <b>{recentJobs.length}</b>
+      <small style={{color:'var(--muted)',fontSize:'11px'}}>casos no ambiente</small>
+      <button className="legal-button" onClick={()=>input.current?.click()}><Plus size={16}/> Novo processo</button>
       <input ref={input} hidden type="file" accept="application/pdf" onChange={e=>onFiles(e.target.files)}/>
-      <div className="uploadIcon"><UploadCloud/></div><h3>Envie o processo em PDF</h3><p>Arraste e solte aqui ou escolha um arquivo do computador.</p>
-      <button className="primary" onClick={()=>input.current?.click()}><Plus size={18}/> Analisar novo processo</button><small>PDF · análise assíncrona · documentos permanecem no ambiente configurado</small>
-    </div>
-
-    <div className="activeWorkCard">
-      <div className="sectionTitle"><span><Clock3/> Atividade recente</span><small>{recentJobs.length ? `${recentJobs.length} registros` : 'Comece agora'}</small></div>
-      {!recentJobs.length ? <div className="recentEmpty"><div><FileText/></div><b>Nenhum processo recente</b><p>O primeiro PDF analisado aparecerá aqui automaticamente.</p></div> :
-       <div className="recentList">{recentJobs.slice(0,5).map(item=><RecentItem key={item.id} item={item} onClick={()=>onOpenRecent(item.id)}/>)}</div>}
     </div>
    </div>
 
-   <div className="featureGrid">
-    <Feature icon={<FileText/>} title="Briefing de assunção" text="Uma visão executiva para quem acabou de assumir o caso."/>
-    <Feature icon={<Search/>} title="Evidências rastreadas" text="Alegação → documento → página, para conferência rápida."/>
-    <Feature icon={<MessageSquare/>} title="Chat com os autos" text="Pergunte em linguagem natural e receba referências."/>
-    <Feature icon={<Bot/>} title="Agentes especialistas" text="Processo, contrato, prazos, evidências, pesquisa e redação."/>
+   <div className="legal-metrics">
+    <div className="legal-metric"><div className="legal-metric-icon"><FolderOpen size={18}/></div><div><strong>{recentJobs.length}</strong><span>processos</span></div></div>
+    <div className="legal-metric"><div className="legal-metric-icon"><Loader2 size={18}/></div><div><strong>{processing}</strong><span>em análise</span></div></div>
+    <div className="legal-metric"><div className="legal-metric-icon"><CheckCircle2 size={18}/></div><div><strong>{completed}</strong><span>concluídos</span></div></div>
+    <div className="legal-metric"><div className="legal-metric-icon"><Sparkles size={18}/></div><div><strong>IA</strong><span>assistida</span></div></div>
+   </div>
+
+   <div className="legal-grid">
+    <div className="legal-card legal-upload" onDragOver={e=>{e.preventDefault();setDrag(true)}} onDragLeave={()=>setDrag(false)} onDrop={e=>{e.preventDefault();setDrag(false);onFiles(e.dataTransfer.files)}} data-drag={drag}>
+      <div className="legal-upload-inner">
+        <div className="legal-upload-box"><UploadCloud size={28}/></div>
+        <div>
+          <span className="legal-eyebrow">Novo caso</span>
+          <h2>Envie um processo em PDF e receba briefing jurídico em minutos.</h2>
+        </div>
+        <p>O sistema extrai autos, organiza evidências, identifica riscos e produz um resumo executiv para a decisão do advogado.</p>
+        <button className="legal-button" onClick={()=>input.current?.click()}><Plus size={16}/> Analisar documento</button>
+        <small>PDF · processamento assíncrono · ambiente local</small>
+      </div>
+    </div>
+
+    <div className="legal-card legal-panel">
+      <div className="legal-panel-header">
+        <strong><Clock3 size={14}/> Atividade</strong>
+        <span>{recentJobs.length ? `${recentJobs.length} itens` : 'vazio'}</span>
+      </div>
+      {!recentJobs.length ? <div className="recentEmpty"><div><FileText/></div><b>Nenhum processo recente</b><p>Os documentos enviados aparecerão aqui para acompanhamento.</p></div> :
+       <div className="legal-list">{recentJobs.slice(0,5).map(item=><RecentItem key={item.id} item={item} onClick={()=>onOpenRecent(item.id)}/>)}</div>}
+    </div>
+   </div>
+
+   <div className="legal-features">
+    <Feature icon={<FileText/>} title="Briefing de assunção" text="Resumo executivo para a tomada de decisão sem perder contexto."/>
+    <Feature icon={<Search/>} title="Evidência rastreada" text="Cada alegação é vinculada a documento, trecho e página."/>
+    <Feature icon={<MessageSquare/>} title="Chat com os autos" text="Pergunte diretamente ao material e receba resposta ancorada."/>
+    <Feature icon={<Bot/>} title="Agentes especializados" text="Processo, contrato, prazos, evidência e pesquisa em um painel único."/>
    </div>
  </section>
 }
@@ -192,25 +244,29 @@ function RecentItem({item,onClick}:{item:RecentJob;onClick:()=>void}){
  const active=!['CONCLUIDO','ERRO'].includes(item.status)
  const done=item.status==='CONCLUIDO'
  const failed=item.status==='ERRO'
- return <button className="recentItem" onClick={onClick}>
-   <div className={`recentIcon ${done?'done':''} ${failed?'failed':''}`}>{done?<CheckCircle2/>:failed?<AlertTriangle/>:<Loader2 className="spin"/>}</div>
-   <div className="recentInfo"><b>{item.nomeArquivo}</b><span>{failed?'Falha no processamento':done?'Relatório pronto':item.etapa || 'Processando'}</span>{active&&<div className="recentProgress"><i style={{width:`${Math.max(2,Math.min(item.progresso||0,100))}%`}}/></div>}</div>
-   <div className="recentMeta"><strong>{done?'100%':`${item.progresso||0}%`}</strong><ChevronRight/></div>
+ return <button className="legal-item" onClick={onClick} style={{width:'100%',border:'1px solid rgba(255,255,255,0.04)',background:'rgba(255,255,255,0.02)',padding:'12px 10px',cursor:'pointer'}}>
+   <div className="legal-item-icon">{done?<CheckCircle2 size={16}/>:failed?<AlertTriangle size={16}/>:<Loader2 size={16} className="spin"/>}</div>
+   <div>
+     <strong>{item.nomeArquivo}</strong>
+     <span>{failed?'Falha no processamento':done?'Relatório pronto':item.etapa || 'Processando'}</span>
+     {active && <div className="recentProgress"><i style={{width:`${Math.max(2,Math.min(item.progresso||0,100))}%`}}/></div>}
+   </div>
+   <small>{done?'100%':`${item.progresso||0}%`}</small>
  </button>
 }
 
-function Feature({icon,title,text}:{icon:any,title:string,text:string}){return <div className="feature"><div className="featureIcon">{icon}</div><div><b>{title}</b><p>{text}</p></div></div>}
+function Feature({icon,title,text}:{icon:any,title:string,text:string}){return <div className="legal-feature"><div className="legal-feature-icon">{icon}</div><div><b>{title}</b><p>{text}</p></div></div>}
 
 function Processing({job,onCancel}:{job:Job,onCancel:()=>void}){
  const foundStage = stages.findIndex(stage => stage[0] === job.status)
  const active = Math.max(0, Math.min(foundStage < 0 ? 0 : foundStage, stages.length - 1))
  const progress = Math.max(0, Math.min(job.progresso ?? 0, 100))
- return <section className="processing">
-   <div className="processHead"><div><span className="eyebrow">ANÁLISE EM ANDAMENTO</span><h2>{job.nomeArquivo}</h2><p>{job.mensagem}</p></div><button className="secondary" onClick={onCancel}><ArrowLeft size={16}/> Voltar</button></div>
-   <div className="progressCard"><div className="progressTop"><div><span>Progresso</span><strong>{progress}%</strong></div><div className="progressBar"><i style={{ width: `${progress}%` }} /></div></div>
+ return <section className="processing legal-processing">
+   <div className="processHead legal-process-head"><div><span className="eyebrow">ANÁLISE EM ANDAMENTO</span><h2>{job.nomeArquivo}</h2><p>{job.mensagem}</p></div><button className="secondary" onClick={onCancel}><ArrowLeft size={16}/> Voltar</button></div>
+   <div className="progressCard legal-progress-card"><div className="progressTop"><div><span>Progresso</span><strong>{progress}%</strong></div><div className="progressBar"><i style={{ width: `${progress}%` }} /></div></div>
     <div className="steps">{stages.map(([stageCode, label], index) => {const done=index<active||job.status==='CONCLUIDO';const current=index===active&&job.status!=='CONCLUIDO';return <div className={`step ${done?'done':''} ${current?'current':''}`} key={stageCode}><div className="stepDot">{done?<CheckCircle2 size={16}/>:current?<Loader2 size={16} className="spin"/>:<span>{index+1}</span>}</div><span>{label}</span></div>})}</div>
    </div>
-   <div className="processingGrid"><div className="infoPanel"><h3><Sparkles size={18}/> O que estamos fazendo</h3><p>O documento é extraído página a página, dividido em trechos e analisado por agentes especializados. Os resultados são consolidados antes da geração do relatório.</p></div><div className="infoPanel"><h3><ShieldCheck size={18}/> Integridade da análise</h3><p>As respostas do chat e do briefing são desenhadas para apontar a origem das informações e declarar lacunas quando o material não sustenta uma conclusão.</p></div></div>
+   <div className="processingGrid legal-grid-workflow"><div className="infoPanel"><h3><Sparkles size={18}/> O que estamos fazendo</h3><p>O documento é extraído página a página, dividido em trechos e analisado por agentes especializados. Os resultados são consolidados antes da geração do relatório.</p></div><div className="infoPanel"><h3><ShieldCheck size={18}/> Integridade da análise</h3><p>As respostas do chat e do briefing são desenhadas para apontar a origem das informações e declarar lacunas quando o material não sustenta uma conclusão.</p></div></div>
  </section>
 }
 
