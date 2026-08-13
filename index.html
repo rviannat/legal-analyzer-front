@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0b1220" />
     <title>Legal Analyzer — Inteligência Jurídica</title>
+    <style>
+      .agents-nav{position:fixed;right:150px;top:16px;z-index:9999;display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 14px;border:1px solid #e1e5ec;border-radius:10px;background:rgba(255,255,255,.96);color:#4e5969;text-decoration:none;font:600 12px/1 system-ui,-apple-system,"Segoe UI",sans-serif;box-shadow:0 4px 16px rgba(15,23,42,.08);backdrop-filter:blur(10px);transition:.18s ease}.agents-nav:hover{transform:translateY(-1px);background:#f8faff;color:#263247}.agents-nav .agents-icon{font-size:15px}@media(max-width:800px){.agents-nav{right:74px;top:12px;height:36px;padding:0 10px;font-size:11px}.agents-nav .agents-label{display:none}}
+    </style>
   </head>
-  <body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body>
+  <body>
+    <a class="agents-nav" href="/agentes.html" aria-label="Nossos Agentes"><span class="agents-icon">✦</span><span class="agents-label">Nossos Agentes</span></a>
+    <div id="root"></div><script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
