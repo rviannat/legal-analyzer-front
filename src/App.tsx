@@ -214,6 +214,43 @@ function Processing({job,onCancel}:{job:Job,onCancel:()=>void}){
  </section>
 }
 
+function exportReport(job:Job, briefing:Briefing|null){
+  const markdown=briefing?.markdown?.trim()
+  const fallback=buildReportMarkdown(job, briefing)
+  const content=markdown || fallback
+  const blob=new Blob([content],{type:'text/markdown;charset=utf-8'})
+  const url=URL.createObjectURL(blob)
+  const base=(briefing?.numeroProcesso || job.nomeArquivo || 'relatorio').replace(/[^a-zA-Z0-9À-ÿ._-]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')
+  const link=document.createElement('a')
+  link.href=url
+  link.download=`relatorio-${base || job.id}.md`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
+function buildReportMarkdown(job:Job, briefing:Briefing|null){
+  const result=job.resultado||{}
+  const lines:string[]=[]
+  lines.push(`# Relatório de análise jurídica`)
+  lines.push(`\n**Arquivo:** ${job.nomeArquivo}`)
+  if(briefing?.numeroProcesso) lines.push(`\n**Processo:** ${briefing.numeroProcesso}`)
+  lines.push(`\n**Gerado em:** ${briefing?.geradoEm || job.atualizadoEm}`)
+  lines.push(`\n## Resumo executivo\n${briefing?.situacao?.resumo || result.resumoProcesso || 'Resumo não disponível.'}`)
+  const parts=briefing?.partes || result.partes || []
+  if(parts.length){lines.push(`\n## Partes`);parts.forEach((p:any)=>lines.push(`- **${p.nome||'Não identificado'}** — ${p.papel||p.qualificacao||'Parte'}`))}
+  const timeline=briefing?.linhaDoTempo || result.cronologia || []
+  if(timeline.length){lines.push(`\n## Linha do tempo`);timeline.forEach((x:any)=>lines.push(`- **${x.data||x.dataEvento||'Data não identificada'}** — ${x.descricaoEvento||x.descricao||x.evento||'Evento'}${x.fase||x.documento?` (${x.fase||x.documento})`:''}`))}
+  const alerts=briefing?.pontosAtencao || result.inconsistencias || []
+  if(alerts.length){lines.push(`\n## Pontos de atenção`);alerts.forEach((a:any)=>lines.push(`- **${a.descricao||a.titulo||'Ponto de atenção'}** — ${a.recomendacao||a.elementosConflitantes||''}`))}
+  const evidence=briefing?.evidencias || result.gruposEvidencia || []
+  if(evidence.length){lines.push(`\n## Evidências`);evidence.forEach((e:any)=>lines.push(`- **${e.alegacao||e.descricao||'Grupo de evidência'}** — ${e.observacoes||e.relevanciaProbatoria||''}`))}
+  if(result.relatorioExecutivo) lines.push(`\n## Relatório executivo\n${result.relatorioExecutivo.visaoGeral||result.relatorioExecutivo.conclusao||''}`)
+  if(briefing?.avisos?.length) lines.push(`\n## Avisos\n${briefing.avisos.map(x=>`- ${x}`).join('\n')}`)
+  return lines.join('\n')+'\n'
+}
+
 function CaseView({job,briefing,tab,setTab}:{job:Job,briefing:Briefing|null,tab:string,setTab:(s:string)=>void}){
  const [chat,setChat]=useState<ChatMsg[]>([]); const [input,setInput]=useState(''); const [sending,setSending]=useState(false); const [spec,setSpec]=useState<any>(null); const [specLoading,setSpecLoading]=useState(false); const [specConfigOpen,setSpecConfigOpen]=useState(false)
  const [specConfig,setSpecConfig]=useState({parteRepresentada:'',contextoAdicional:'',pesquisaJuridica:false,consultaPesquisa:'',forcarProcesso:false,forcarContrato:false,rascunhos:[] as string[]})
@@ -222,8 +259,8 @@ function CaseView({job,briefing,tab,setTab}:{job:Job,briefing:Briefing|null,tab:
  async function specialized(){setSpecConfigOpen(true)}
  async function runSpecialized(){setSpecConfigOpen(false);setSpecLoading(true);try{const j=await startSpecialized(job.id,{...specConfig,rascunhos:specConfig.rascunhos});let r=await getSpecialized(j.id);while(!['CONCLUIDO','ERRO'].includes(r.status)){await new Promise(x=>setTimeout(x,1200));r=await getSpecialized(j.id)}setSpec(r)}catch(e:any){setSpec({status:'ERRO',mensagem:e.message})}finally{setSpecLoading(false)}}
  const toggleDraft=(value:string)=>setSpecConfig(c=>({...c,rascunhos:c.rascunhos.includes(value)?c.rascunhos.filter(x=>x!==value):[...c.rascunhos,value]}))
- return <section className="case"><div className="caseHero"><div><span className="eyebrow">BRIEFING DE ASSUNÇÃO</span><h2>{briefing?.numeroProcesso || 'Processo não identificado'}</h2><p>{briefing?.nomeArquivo || job.nomeArquivo}</p></div><div className="caseActions"><button className="secondary"><FileText size={16}/> Exportar</button><button className="primary" onClick={specialized} disabled={specLoading}>{specLoading?<Loader2 className="spin"/>:<Sparkles/>} Análise especializada</button></div></div>
-  {specConfigOpen && <SpecializedConfigModal config={specConfig} setConfig={setSpecConfig} toggleDraft={toggleDraft} onCancel={()=>setSpecConfigOpen(false)} onSubmit={runSpecialized}/>}
+ return <section className="case"><div className="caseHero"><div><span className="eyebrow">BRIEFING DE ASSUNÇÃO</span><h2>{briefing?.numeroProcesso || 'Processo não identificado'}</h2><p>{briefing?.nomeArquivo || job.nomeArquivo}</p></div><div className="caseActions"><button className="secondary" onClick={()=>exportReport(job,briefing)} disabled={!briefing && !job.resultado}><FileText size={16}/> Exportar</button><button className="primary" onClick={specialized} disabled={specLoading}>{specLoading?<Loader2 className="spin"/>:<Sparkles/>} Análise especializada</button></div></div>
+  {specConfigOpen && <SpecializedConfigModal config={specConfig} setConfig={setSpecConfig} toggleDraft={toggleDraft} onCancel={()=>setSpecConfigOpen(false)} onSubmit={runSpecialized}/>} 
   <div className="tabs">{[['overview','Visão geral'],['timeline','Linha do tempo'],['evidence','Evidências'],['chat','Chat com os autos']].map(([id,label])=><button key={id} className={tab===id?'active':''} onClick={()=>setTab(id)}>{label}</button>)}</div>
   {tab==='overview' && <Overview result={result} briefing={briefing} alerts={alerts} parts={parts}/>} {tab==='timeline' && <Timeline items={timeline}/>} {tab==='evidence' && <Evidence items={evidence}/>} {tab==='chat' && <Chat chat={chat} input={input} setInput={setInput} send={send} sending={sending}/>} {spec && <SpecializedPanel spec={spec}/>}</section>
 }
