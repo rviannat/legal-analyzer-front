@@ -10,6 +10,8 @@ import { askProcess, getBriefing, getJob, getSpecialized, startSpecialized, uplo
 type View = 'home' | 'processing' | 'case'
 type ChatMsg = { role:'user'|'assistant'; text:string; citations?:any[] }
 
+const ACTIVE_JOB_KEY = 'legal-analyzer:active-job-id'
+
 const stages = [
   ['EXTRAINDO_PDF','Extraindo PDF'], ['ANALISANDO_PARTES','Analisando partes'],
   ['CONSOLIDANDO','Consolidando evidências'], ['ANALISANDO_EVIDENCIAS','Analisando evidências'],
@@ -25,14 +27,51 @@ function App(){
 
   async function handleUpload(file:File){
     setError('')
-    try { const j=await uploadPdf(file); setJob(j); setView('processing') }
+    try {
+      const j=await uploadPdf(file)
+      localStorage.setItem(ACTIVE_JOB_KEY, j.id)
+      setJob(j)
+      setView('processing')
+    }
     catch(e:any){ setError(e.message || 'Não foi possível enviar o PDF.') }
   }
 
   useEffect(()=>{
+    const savedJobId = localStorage.getItem(ACTIVE_JOB_KEY)
+    if(!savedJobId) return
+
+    getJob(savedJobId)
+      .then(savedJob=>{
+        setJob(savedJob)
+        if(savedJob.status==='CONCLUIDO'){
+          localStorage.removeItem(ACTIVE_JOB_KEY)
+          setView('case')
+        } else if(savedJob.status==='ERRO'){
+          localStorage.removeItem(ACTIVE_JOB_KEY)
+          setError(savedJob.mensagem || 'O processamento foi encerrado com erro.')
+          setView('home')
+        } else {
+          setView('processing')
+        }
+      })
+      .catch(()=>{
+        localStorage.removeItem(ACTIVE_JOB_KEY)
+      })
+  },[])
+
+  useEffect(()=>{
     if(view!=='processing' || !job || ['CONCLUIDO','ERRO'].includes(job.status)) return
     const timer=setInterval(async()=>{
-      try { const next=await getJob(job.id); setJob(next); if(next.status==='CONCLUIDO') setView('case') }
+      try {
+        const next=await getJob(job.id)
+        setJob(next)
+        if(next.status==='CONCLUIDO'){
+          localStorage.removeItem(ACTIVE_JOB_KEY)
+          setView('case')
+        } else if(next.status==='ERRO'){
+          localStorage.removeItem(ACTIVE_JOB_KEY)
+        }
+      }
       catch(e:any){ setError(e.message) }
     },1500)
     return ()=>clearInterval(timer)
