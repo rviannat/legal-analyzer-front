@@ -20,6 +20,22 @@ export type ChatResponse = {
   sessaoId: string; pergunta: string; resposta: string; citacoes: any[];
   fundamentada: boolean; modoRecuperacao: string; perguntasSugeridas: string[]; aviso: string
 }
+export type DataJudInfo = {
+  status?: string; numeroProcesso?: string | null; tribunal?: string | null; endpoint?: string | null;
+  encontrado?: boolean; quantidadeMovimentos?: number | null; ultimaMovimentacao?: string | null;
+  classeProcessual?: string | null; orgaoJulgador?: string | null; grau?: string | null;
+  mensagem?: string | null; consultadoEm?: string | null; movimentos?: any[]
+}
+export type DataJudSample = {
+  numeroProcesso?: string | null; codigoClasse?: string | null; classe?: string | null;
+  assuntos?: string[]; grau?: string | null; orgaoJulgador?: string | null;
+  dataAjuizamento?: string | null; ultimaMovimentacao?: string | null; possuiBaixa?: boolean
+}
+export type DataJudSearchResponse = {
+  id: string; tipo: string; tribunal?: string | null; criterio?: string | null;
+  sucesso: boolean; mensagem?: string | null; consultadoEm?: string | null;
+  info?: DataJudInfo | null; amostra?: DataJudSample[]; quantidade?: number
+}
 
 async function parse<T>(r: Response): Promise<T> {
   const body = await r.json().catch(() => ({}))
@@ -49,4 +65,22 @@ export async function startSpecialized(id: string, payload: any = {}) {
 }
 export async function getSpecialized(id: string) {
   return parse<any>(await fetch(`${API}/api/v1/processos/analises-especializadas/${id}`))
+}
+export async function searchProcessByCnj(numeroProcesso: string) {
+  return parse<DataJudSearchResponse>(await fetch(`${API}/api/v1/datajud/processos/cnj?numeroProcesso=${encodeURIComponent(numeroProcesso)}`))
+}
+export async function searchProcessByCpf(cpf: string, tribunal?: string) {
+  const params = new URLSearchParams({cpf}); if (tribunal?.trim()) params.set('tribunal', tribunal.trim())
+  return parse<DataJudSearchResponse>(await fetch(`${API}/api/v1/datajud/processos/cpf?${params.toString()}`))
+}
+export async function searchProcessBySubject(tribunal: string, assunto: string, tamanho = 10) {
+  const params = new URLSearchParams({codigoTribunal: tribunal, assunto, tamanho: String(tamanho)})
+  return parse<DataJudSearchResponse>(await fetch(`${API}/api/v1/datajud/processos/amostra?${params.toString()}`))
+}
+export async function processFoundCnj(numeroProcesso: string) {
+  return parse<Job>(await fetch(`${API}/api/v1/datajud/processos/cnj/processar?numeroProcesso=${encodeURIComponent(numeroProcesso)}`, {method:'POST'}))
+}
+export async function processFoundCpf(cpf: string, tribunal?: string) {
+  const params = new URLSearchParams({cpf}); if (tribunal?.trim()) params.set('tribunal', tribunal.trim())
+  return parse<Job>(await fetch(`${API}/api/v1/datajud/processos/cpf/processar?${params.toString()}`, {method:'POST'}))
 }
