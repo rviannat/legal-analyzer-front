@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b1220" />
+    <title>Legal Analyzer — Inteligência Jurídica</title>
+    <style>
+      .agents-nav{position:fixed;right:150px;top:16px;z-index:9999;display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 14px;border:1px solid #e1e5ec;border-radius:10px;background:rgba(255,255,255,.96);color:#4e5969;text-decoration:none;font:600 12px/1 system-ui,-apple-system,"Segoe UI",sans-serif;box-shadow:0 4px 16px rgba(15,23,42,.08);backdrop-filter:blur(10px);transition:.18s ease}.agents-nav:hover{transform:translateY(-1px);background:#f8faff;color:#263247}.agents-nav .agents-icon{font-size:15px}@media(max-width:800px){.agents-nav{right:74px;top:12px;height:36px;padding:0 10px;font-size:11px}.agents-nav .agents-label{display:none}}
+    </style>
+  </head>
+  <body>
+    <a class="agents-nav" href="/agentes.html" aria-label="Nossos Agentes"><span class="agents-icon">✦</span><span class="agents-label">Nossos Agentes</span></a>
+    <div id="root"></div>
+    <script>
+      (()=>{
+        const KEY='legal-analyzer:recent-jobs', API=(localStorage.getItem('legal-analyzer:api-url')||'http://localhost:8080').replace(/\/$/,'');
+        let busy=false;
+        const terminal=new Set(['CONCLUIDO','ERRO']);
+        async function monitor(){
+          if(busy) return; busy=true;
+          try{
+            const jobs=JSON.parse(localStorage.getItem(KEY)||'[]');
+            const active=jobs.filter(j=>j&&j.id&&!terminal.has(j.status));
+            if(!active.length) return;
+            const results=await Promise.allSettled(active.map(j=>fetch(API+'/api/v1/processos/analises/'+encodeURIComponent(j.id)).then(r=>r.ok?r.json():null)));
+            let changed=false;
+            const byId=new Map(jobs.map(j=>[j.id,j]));
+            results.forEach((r,i)=>{
+              if(r.status!=='fulfilled'||!r.value) return;
+              const next=r.value, old=byId.get(active[i].id); if(!old) return;
+              const wasTerminal=terminal.has(old.status);
+              byId.set(next.id,{...old,...next,savedAt:new Date().toISOString()}); changed=true;
+              if(!wasTerminal&&next.status==='CONCLUIDO') notify('Relatório pronto',next.nomeArquivo||'Processo concluído');
+              if(!wasTerminal&&next.status==='ERRO') notify('Processamento encerrado com erro',next.nomeArquivo||'Verifique o processo');
+            });
+            if(changed) localStorage.setItem(KEY,JSON.stringify(Array.from(byId.values()).slice(0,8)));
+          }catch(e){}finally{busy=false}
+        }
+        function notify(title,body){
+          try{ if('Notification' in window && Notification.permission==='granted') new Notification(title,{body,icon:'/favicon.ico'}); }catch(e){}
+        }
+        window.addEventListener('click',e=>{
+          const a=e.target.closest?.('.agents-nav'); if(a) return;
+          if('Notification' in window && Notification.permission==='default') Notification.requestPermission().catch(()=>{});
+        },{once:true});
+        monitor(); setInterval(monitor,3000);
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
