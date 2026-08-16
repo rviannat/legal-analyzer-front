@@ -5,6 +5,7 @@ import ProcessosCentral from './ProcessosCentral'
 import './styles.css'
 import './layout-redesign.css'
 import './processos-central.css'
+import './research-history.css'
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode><><App /><ProcessosCentral /></></React.StrictMode>
