@@ -1,18 +1,66 @@
 # Legal Analyzer Frontend
 
-Frontend React/TypeScript para o backend `legal-analyzer`.
+Frontend React + TypeScript do `legal-analyzer`, com interface orientada ao trabalho jurídico.
 
-## O que foi desenhado a partir do backend e PDF
+## Status atual
 
-- Upload de PDF para `POST /api/v1/processos/analisar`
-- Polling do job assíncrono em `GET /api/v1/processos/analises/{id}`
-- Progresso visual: extração → partes → consolidação → evidências → relatório
-- Briefing de assunção
-- Partes, situação, pontos de atenção, linha do tempo e evidências
-- Chat ancorado nos autos
-- Disparo da análise especializada
-- Layout responsivo, corporativo e orientado a escritório de advocacia
-- Linguagem visual alinhada à proposta do PDF: sigilo, rastreabilidade, previsibilidade e apoio à decisão
+O frontend já suporta:
+
+- Upload de PDF e acompanhamento do processamento assíncrono.
+- Visualização de progresso e logs/status do backend.
+- Briefing, partes, situação, pontos de atenção, linha do tempo e evidências.
+- Chat ancorado nos autos.
+- Configuração e disparo da análise jurídica especializada.
+- Exportação do relatório PDF persistido pelo backend.
+- Área **Pesquisas** integrada ao DataJud/CNJ.
+- Pesquisa por CNJ.
+- Pesquisa por CPF.
+- Pesquisa agregada por Tribunal + Assunto/TPU.
+- Exibição dos resultados encontrados.
+- Ação **Processar** para colocar um processo encontrado no mesmo fluxo do upload.
+- Histórico de pesquisas disponível no backend para evolução da tela de pesquisas.
+- Layout responsivo e corporativo.
+
+## Fluxo de pesquisas
+
+```text
+Pesquisas
+   │
+   ├── CNJ
+   ├── CPF
+   └── Tribunal + Assunto / TPU
+          │
+          ▼
+       DataJud
+          │
+          ▼
+   Resultado persistido
+          │
+          ▼
+      Processar
+          │
+          ▼
+   Mesmo fluxo do upload
+          │
+          ▼
+ Agentes → RAG → Relatório PDF
+```
+
+A persistência do resultado é responsabilidade do backend. O frontend não considera um processo encontrado como processado até receber o `analiseId` do backend.
+
+## Backend
+
+O backend esperado é:
+
+```text
+http://localhost:8080
+```
+
+Configure outro endereço em `.env`:
+
+```env
+VITE_API_URL=http://localhost:8080
+```
 
 ## Executar
 
@@ -22,14 +70,25 @@ cp .env.example .env
 npm run dev
 ```
 
-Backend esperado em `http://localhost:8080`.
+## Principais integrações
 
-Para outro endereço:
-
-```env
-VITE_API_URL=http://localhost:8080
+```text
+POST /api/v1/processos/analisar
+GET  /api/v1/processos/analises/{id}
+GET  /api/v1/processos/analises/{id}/relatorio-pdf
+GET  /api/v1/datajud/processos/cnj
+GET  /api/v1/datajud/processos/cpf
+GET  /api/v1/datajud/processos/amostra
+POST /api/v1/datajud/processos/cnj/processar
+POST /api/v1/datajud/processos/cpf/processar
+POST /api/v1/datajud/processos/amostra/processar
+GET  /api/v1/datajud/pesquisas
 ```
+
+## Arquitetura visual
+
+A navegação principal fica no topo, incluindo **Processos** e **Pesquisas**. A área de pesquisas concentra as consultas externas e evita espalhar funcionalidades de DataJud pela tela principal.
 
 ## Observação
 
-O backend atual não expõe autenticação nem endpoints de listagem de processos. Por isso a primeira versão do frontend trabalha com a sessão do processo recém-enviado e não inventa uma persistência de casos que o backend ainda não oferece.
+Autenticação e autorização ainda não estão implementadas. A aplicação deve ser tratada como ambiente de desenvolvimento até que essas camadas sejam adicionadas.
