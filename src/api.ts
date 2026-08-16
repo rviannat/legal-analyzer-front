@@ -17,6 +17,7 @@ export async function getBriefing(id:string){return parse<Briefing>(await fetch(
 export async function askProcess(id:string,pergunta:string,sessaoId?:string){return parse<ChatResponse>(await fetch(`${API}/api/v1/processos/analises/${id}/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pergunta,...(sessaoId?{sessaoId}:{})})}))}
 export async function startSpecialized(id:string,payload:any={}){return parse<any>(await fetch(`${API}/api/v1/processos/analises/${id}/especializada`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}))}
 export async function getSpecialized(id:string){return parse<any>(await fetch(`${API}/api/v1/processos/analises-especializadas/${id}`))}
+export function originalPdfUrl(id:string){return `${API}/api/v1/processos/analises/${id}/arquivo-pdf`}
 export function baseReportUrl(id:string){return `${API}/api/v1/processos/analises/${id}/relatorio-pdf`}
 export function specializedReportUrl(id:string){return `${API}/api/v1/processos/analises-especializadas/${id}/relatorio-pdf`}
 export async function searchProcessByCnj(numeroProcesso:string){return parse<DataJudSearchResponse>(await fetch(`${API}/api/v1/datajud/processos/cnj?numeroProcesso=${encodeURIComponent(numeroProcesso)}`))}
